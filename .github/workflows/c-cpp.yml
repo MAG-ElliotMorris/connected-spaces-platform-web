@@ -50,5 +50,4 @@ jobs:
     - name: Run Integration Test
       shell: bash
       run: |
-        cmd.exe /C "call build\\build\\Debug\\generators\\conanbuild.bat && ctest --test-dir build --output-on-failure"
-
+        cmd.exe /C "call build\build\Debug\generators\conanbuild.bat && echo Running ctest... && ctest --test-dir build --output-on-failure"
