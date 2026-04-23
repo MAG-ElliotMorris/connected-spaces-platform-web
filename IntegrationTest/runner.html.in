@@ -9,15 +9,9 @@
     <pre id="out">RUNNING...</pre>
 
     <script>
-      // Non-modularize: Module is a global config object.
-      // Must exist before emrun_prejs.js touches it.
-      var Module = globalThis.Module || {};
+
     </script>
 
-    <!-- Emscripten-generated JS (creates runtime, loads wasm, etc.) -->
-    <script src="@MODULE_JS@"></script>
-
-    <!-- Your test runner -->
-    <script src="runner.js"></script>
+    <script type="module" src="runner.js"></script>
   </body>
 </html>

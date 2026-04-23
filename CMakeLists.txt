@@ -9,31 +9,40 @@ add_executable(test-emscripten-bindings Bindings.cpp)
 # Project uses C++17
 target_compile_features(test-emscripten-bindings PUBLIC cxx_std_17)
 
-include(FetchContent)
-
-FetchContent_Declare(
-  test-lib
-  GIT_REPOSITORY https://github.com/MAG-mv/test-build-system.git
-  GIT_TAG        143c5d68342fdcc704e9c5fb46b498efbf46178a
-  GIT_SHALLOW    TRUE
-  GIT_PROGRESS   TRUE
-)
-
-FetchContent_MakeAvailable(test-lib)
+find_package(CSP CONFIG REQUIRED)
 
 target_link_libraries(test-emscripten-bindings
-  test-lib
+  PRIVATE
+    CSP::csp-lib
 )
 
+target_compile_options(test-emscripten-bindings PRIVATE
+  $<$<PLATFORM_ID:Emscripten>:-pthread>
+  $<$<PLATFORM_ID:Emscripten>:-fwasm-exceptions>
+)
+
+
 target_link_options(test-emscripten-bindings PRIVATE
-  "-lembind"
-  "-sEXPORT_NAME=TestModule"
-  "-sALLOW_MEMORY_GROWTH=1"
-  "-sEXIT_RUNTIME=1"
-  "--no-entry"
-  "--emrun"
-  "-sASSERTIONS=0"
-  "-sEXPORTED_FUNCTIONS=['_exit']"                          
+   $<$<PLATFORM_ID:Emscripten>:
+    -pthread
+    -fwasm-exceptions
+    -lembind
+    -lwebsocket.js
+    -sFETCH
+    -sPTHREAD_POOL_SIZE_STRICT=0
+    "-sEXPORTED_FUNCTIONS=['_malloc','_free','_exit']"
+    -sEXPORT_ES6=1
+    -sMODULARIZE=1
+    -sEXPORT_NAME=createModule
+    -sALLOW_TABLE_GROWTH=1
+    -sWASM_BIGINT
+    -sALLOW_MEMORY_GROWTH=1
+    -sINITIAL_MEMORY=33554432
+    -sMAXIMUM_MEMORY=1073741824
+    "-sEXPORTED_RUNTIME_METHODS=['ccall','setValue','getValue','addFunction','removeFunction','UTF8ToString','stringToUTF8','lengthBytesUTF8']"
+    "-sINCOMING_MODULE_JS_API=['buffer','fetchSettings','instantiateWasm','locateFile','mainScriptUrlOrBlob','wasmMemory']"
+    --no-entry
+  >
 )
 
 
@@ -63,6 +72,9 @@ configure_file(
   "${TEST_WEB_DIR}/runner.html"
   @ONLY
 )
+
+get_target_property(_incs test-emscripten-bindings INCLUDE_DIRECTORIES)
+message(STATUS "test-emscripten-bindings INCLUDE_DIRECTORIES = ${_incs}")
 
 # --log-level=3 prevents browser console spam.
 
