@@ -23,29 +23,12 @@ jobs:
         with:
           arch: x64
 
-      # Activates emsdk and exports EMSDK / PATH for subsequent steps.
-      # Both the CSP and bindings emscripten host profiles read $EMSDK via
-      # Jinja to locate emcc/em++. Version pinned to match the toolchain
-      # CSP's emscripten profile expects.
-      - name: Set up emsdk
-        uses: mymindstorm/setup-emsdk@v14
+      # Setup EMSDK with cache so we don't have to re-download it constantly
+      - name: Setup emsdk
+        uses: emscripten-core/setup-emsdk@v15
         with:
           version: 5.0.2
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.x'
-          cache: pip
-
-      - name: Install Conan
-        shell: pwsh
-        run: pip install "conan==2.27.0"
-
-      # Some Conan internals expect a default profile to exist even when
-      # host and build profiles are passed explicitly.
-      - name: Detect default Conan profile
-        shell: pwsh
-        run: conan profile detect --force
+          actions-cache-folder: 'emsdk-cache'
 
       # Builds CSP as a static emscripten archive and installs to CSP/install.
       # Requires emsdk + Conan + Python + MSVC to already be on PATH (above).
@@ -66,8 +49,7 @@ jobs:
       - name: CMake configure
         shell: bash
         env:
-          # Prepended to the conan-supplied CMAKE_PREFIX_PATH so find_package(CSP)
-          # locates the user-provided install without losing conan deps.
+          # Tell Cmake where CSP is
           CMAKE_PREFIX_PATH: ${{ github.workspace }}/CSP/install
         run: cmake --preset ${{ matrix.config }}
 
