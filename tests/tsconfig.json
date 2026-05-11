@@ -15,5 +15,5 @@
     "noEmit": true,
     "types": ["vitest/globals", "@vitest/browser/providers/playwright"]
   },
-  "include": ["tests/**/*.ts", "vitest.config.ts"]
+  "include": ["**/*.ts"]
 }
