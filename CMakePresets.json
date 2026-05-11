@@ -1,0 +1,28 @@
+{
+  "version": 4,
+  "include": ["./ConanPresets.json"],
+  "configurePresets": [
+    {
+      "name": "release",
+      "displayName": "release single config (ninja)",
+      "inherits": "conan-release"
+    },
+    {
+      "name": "debug",
+      "displayName": "debug single config (ninja)",
+      "inherits": "conan-debug"
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "configuration": "Release"
+    },
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "configuration": "Debug"
+    }
+  ]
+}
