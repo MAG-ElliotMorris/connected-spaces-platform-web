@@ -1,0 +1,90 @@
+name: Build CSP Emsdk
+description: |
+  Composite action that checks out the Connected Spaces Platform repo, builds it
+  as a static Emscripten archive in the requested build type (Debug or Release),
+  and installs the result to "CSP/install" (creating `include`, `bin`, and `lib`
+  subdirectories) so a downstream job can `find_package(CSP)` against it.
+
+  You need to have setup dependencies before invoking this action, specifically:
+    * Emscripten 5.0.2 active on the runner with `$EMSDK` exported on PATH
+      You can do this by calling `mymindstorm/setup-emsdk@v14` with `version: 5.0.2`).
+    * Conan 2.27.0 on PATH (`pip install "conan==2.27.0"`).
+
+inputs:
+  csp_branch:
+    description: CSP branch to build, defaults to main.
+    required: false
+    default: 'main'
+  build_type:
+    description: Debug or Release
+    required: true
+    default: 'Release'
+
+runs:
+  using: composite
+  steps:
+
+    - name: Checkout connected-spaces-platform
+      uses: actions/checkout@v4
+      with:
+        repository: magnopus-opensource/connected-spaces-platform
+        path: CSP
+        ref: ${{ inputs.csp_branch }}
+        fetch-depth: 0 # Required for git describe to find version tags, which we need for CSP_VERSION
+
+    # Split restore/save: the save step is gated on `success()` so an interrupted or failed
+    # `conan install` cannot poison the cache with a partial `~/.conan2/p`.
+    - name: Cache Conan packages (restore)
+      id: conan-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/.conan2/p
+        key: conan-emsdk-${{ inputs.build_type }}-${{ hashFiles('CSP/conanfile.py', 'CSP/profiles/host/emscripten', 'CSP/profiles/build/windows') }}
+        restore-keys: conan-emsdk-${{ inputs.build_type }}-
+
+    - name: Conan install
+      shell: pwsh
+      working-directory: "./CSP"
+      env:
+        # CMake 4 dropped support for cmake_minimum_required(VERSION <3.5), which
+        # some older transitive Conan recipes (e.g. asyncplusplus/1.2) still
+        # declare.
+        # If cmake 4 is on the runner, this is neccesary.
+        CMAKE_POLICY_VERSION_MINIMUM: '3.5'
+      run: >
+        conan install .
+        --profile:host=profiles/host/emscripten
+        --profile:build=profiles/build/windows
+        -s build_type=${{ inputs.build_type }}
+        --build=missing
+
+    - name: Cache Conan packages (save)
+      if: success() && steps.conan-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/.conan2/p
+        key: conan-emsdk-${{ inputs.build_type }}-${{ hashFiles('CSP/conanfile.py', 'CSP/profiles/host/emscripten', 'CSP/profiles/build/windows') }}
+
+    - name: Install wrapper generator dependencies
+      shell: pwsh
+      run: pip install chevron==0.14.0 jinja2==3.1.2
+
+    # Run the legacy wrapper generator — its output is included directly in CSPFoundation.cpp. Should go away eventually
+    - name: Run wrapper generator
+      shell: pwsh
+      run: python CSP/Tools/WrapperGenerator/WrapperGenerator.py
+
+    - name: Configure
+      shell: pwsh
+      working-directory: "./CSP"
+      run: cmake --preset ${{ inputs.build_type == 'Debug' && 'debug-static' || 'release-static' }}
+
+    - name: Build
+      shell: pwsh
+      working-directory: "./CSP"
+      run: cmake --build --preset ${{ inputs.build_type == 'Debug' && 'debug-static' || 'release-static' }} --parallel 2
+
+    - name: Install
+      shell: pwsh
+      working-directory: "./CSP"
+      run: cmake --install build/${{ inputs.build_type }} --prefix install
