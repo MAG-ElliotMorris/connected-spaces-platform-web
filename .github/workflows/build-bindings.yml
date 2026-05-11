@@ -1,0 +1,76 @@
+name: Build emscripten bindings
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  emscripten-build:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [release, debug]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # MSVC is the build-context compiler used by profiles/build/windows.
+      # Needed if Conan has to compile any tool_requires from source.
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      # Activates emsdk and exports EMSDK / PATH for subsequent steps.
+      # Both the CSP and bindings emscripten host profiles read $EMSDK via
+      # Jinja to locate emcc/em++. Version pinned to match the toolchain
+      # CSP's emscripten profile expects.
+      - name: Set up emsdk
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 5.0.2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          cache: pip
+
+      - name: Install Conan
+        shell: pwsh
+        run: pip install "conan==2.27.0"
+
+      # Some Conan internals expect a default profile to exist even when
+      # host and build profiles are passed explicitly.
+      - name: Detect default Conan profile
+        shell: pwsh
+        run: conan profile detect --force
+
+      # Builds CSP as a static emscripten archive and installs to CSP/install.
+      # Requires emsdk + Conan + Python + MSVC to already be on PATH (above).
+      - name: Build CSP (emsdk)
+        uses: ./.github/actions/build-csp-emsdk
+        with:
+          build_type: ${{ matrix.config == 'debug' && 'Debug' || 'Release' }}
+
+      - name: Conan install
+        shell: bash
+        run: |
+          set -eux
+          conan install . \
+            --profile:host=profiles/host/emscripten-${{ matrix.config }} \
+            --profile:build=profiles/build/windows \
+            --build=missing
+
+      - name: CMake configure
+        shell: bash
+        env:
+          # Prepended to the conan-supplied CMAKE_PREFIX_PATH so find_package(CSP)
+          # locates the user-provided install without losing conan deps.
+          CMAKE_PREFIX_PATH: ${{ github.workspace }}/CSP/install
+        run: cmake --preset ${{ matrix.config }}
+
+      - name: CMake build
+        shell: bash
+        run: cmake --build --preset ${{ matrix.config }}
