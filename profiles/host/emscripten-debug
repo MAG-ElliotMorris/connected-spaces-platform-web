@@ -1,0 +1,4 @@
+include(_emscripten-base)
+
+[settings]
+build_type=Debug
