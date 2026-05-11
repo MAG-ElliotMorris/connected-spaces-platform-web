@@ -31,7 +31,8 @@ jobs:
           actions-cache-folder: 'emsdk-cache'
 
       # Builds CSP as a static emscripten archive and installs to CSP/install.
-      # Requires emsdk + Conan + Python + MSVC to already be on PATH (above).
+      # Requires emsdk to already be on PATH (above).
+      # Might be nice to cache this as well.
       - name: Build CSP (emsdk)
         uses: ./.github/actions/build-csp-emsdk
         with:
@@ -43,7 +44,6 @@ jobs:
           set -eux
           conan install . \
             --profile:host=profiles/host/emscripten-${{ matrix.config }} \
-            --profile:build=profiles/build/windows \
             --build=missing
 
       - name: CMake configure
