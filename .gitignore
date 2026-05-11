@@ -53,3 +53,8 @@ CMakeUserPresets.json
 
 build/
 install/
+
+### Node / Vitest ###
+node_modules/
+.vitest-cache/
+*.tsbuildinfo
