@@ -58,3 +58,6 @@ install/
 node_modules/
 .vitest-cache/
 *.tsbuildinfo
+
+.claude
+ConanPresets.json
