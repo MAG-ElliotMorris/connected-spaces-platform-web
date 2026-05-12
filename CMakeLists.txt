@@ -5,6 +5,7 @@ project(ConnectedSpacesPlatformWeb VERSION 1.0
     LANGUAGES CXX)
 
 add_executable(connected-spaces-platform-bindings Bindings.cpp)
+set_target_properties(connected-spaces-platform-bindings PROPERTIES SUFFIX ".js")
 
 # Project uses C++17
 target_compile_features(connected-spaces-platform-bindings PUBLIC cxx_std_17)
