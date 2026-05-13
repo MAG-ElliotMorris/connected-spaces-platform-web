@@ -32,35 +32,49 @@ runs:
         ref: ${{ inputs.csp_branch }}
         fetch-depth: 0 # Required for git describe to find version tags, which we need for CSP_VERSION
 
+    # Resolve the actual commit SHA so the install cache key is pinned to commit
+    # content rather than the (mutable) branch name.
+    - name: Resolve CSP commit SHA
+      id: csp-sha
+      shell: pwsh
+      working-directory: "./CSP"
+      run: |
+        "sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+
+    # If we already have a matching install tree, skip Conan, wrapper generation,
+    # configure, build, and install entirely. The key includes a hash of this
+    # action so a change to build flags here invalidates the cache.
+    - name: Cache CSP install (restore)
+      id: csp-install-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: CSP/install
+        key: csp-install-emsdk-${{ inputs.build_type }}-${{ steps.csp-sha.outputs.sha }}-${{ hashFiles('.github/actions/build-csp-emsdk/action.yml') }}
+
     - uses: actions/setup-python@v5
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       with:
         python-version: '3.x'
         cache: pip
 
     # We need cl.exe on the path.
     - uses: ilammy/msvc-dev-cmd@v1
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       with:
         arch: x64
-        
+
     - name: Install Conan
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: pip install "conan==2.27.0"
 
-    # Split restore/save: the save step is gated on `success()` so an interrupted or failed
-    # `conan install` cannot poison the cache with a partial `~/.conan2/p`.
-    - name: Cache Conan packages (restore)
-      id: conan-cache
-      uses: actions/cache/restore@v4
-      with:
-        path: ~/.conan2/p
-        key: conan-emsdk-${{ inputs.build_type }}-${{ hashFiles('CSP/conanfile.py', 'CSP/profiles/host/emscripten') }}
-        restore-keys: conan-emsdk-${{ inputs.build_type }}-
-
     - name: Detect Conan build profile
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: conan profile detect --force
 
     - name: Conan install
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       working-directory: "./CSP"
       env:
@@ -75,33 +89,40 @@ runs:
         -s build_type=${{ inputs.build_type }}
         --build=missing
 
-    - name: Cache Conan packages (save)
-      if: success() && steps.conan-cache.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: ~/.conan2/p
-        key: conan-emsdk-${{ inputs.build_type }}-${{ hashFiles('CSP/conanfile.py', 'CSP/profiles/host/emscripten') }}
-
     - name: Install wrapper generator dependencies
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: pip install chevron==0.14.0 jinja2==3.1.2
 
     # Run the legacy wrapper generator — its output is included directly in CSPFoundation.cpp. Should go away eventually
     - name: Run wrapper generator
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       run: python CSP/Tools/WrapperGenerator/WrapperGenerator.py
 
     - name: Configure
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       working-directory: "./CSP"
       run: cmake --preset ${{ inputs.build_type == 'Debug' && 'debug-static' || 'release-static' }}
 
     - name: Build
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       working-directory: "./CSP"
       run: cmake --build --preset ${{ inputs.build_type == 'Debug' && 'debug-static' || 'release-static' }} --parallel 2
 
     - name: Install
+      if: steps.csp-install-cache.outputs.cache-hit != 'true'
       shell: pwsh
       working-directory: "./CSP"
       run: cmake --install build/${{ inputs.build_type }} --prefix install
+
+    # Save only on a clean build (success + we actually built) so a failed run
+    # cannot poison the cache with a partial install tree.
+    - name: Cache CSP install (save)
+      if: success() && steps.csp-install-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: CSP/install
+        key: csp-install-emsdk-${{ inputs.build_type }}-${{ steps.csp-sha.outputs.sha }}-${{ hashFiles('.github/actions/build-csp-emsdk/action.yml') }}
