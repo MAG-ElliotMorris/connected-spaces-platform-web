@@ -11,7 +11,7 @@ const installDir = resolve(repoRoot, 'CSP-WASM-Bindings');
 export default defineConfig(() => {
   if (!existsSync(installDir)) {
     throw new Error(
-      `Bindings install directory not found: ${installDir}. Build and install the bindings first (cmake --install build/<Config> --prefix CSP-WASM-Bindings).`,
+      `Bindings install directory not found: ${installDir}. Build and install the bindings first.`,
     );
   }
 

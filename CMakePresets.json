@@ -5,12 +5,18 @@
     {
       "name": "release",
       "displayName": "release single config (ninja)",
-      "inherits": "conan-release"
+      "inherits": "conan-release",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/CSP-WASM-Bindings"
+      }
     },
     {
       "name": "debug",
       "displayName": "debug single config (ninja)",
-      "inherits": "conan-debug"
+      "inherits": "conan-debug",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/CSP-WASM-Bindings"
+      }
     }
   ],
   "buildPresets": [

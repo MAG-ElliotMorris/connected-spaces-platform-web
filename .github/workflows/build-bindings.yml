@@ -57,9 +57,11 @@ jobs:
         shell: bash
         run: cmake --build --preset ${{ matrix.config }}
 
+      # Install prefix is set via CMAKE_INSTALL_PREFIX in CMakePresets.json.
+      # The tests are hardcoded to find the package at <repo>/CSP-WASM-Bindings.
       - name: Install
         shell: bash
-        run: cmake --install build/Debug --prefix CSP-WASM-Bindings # This is a magic install prefix that the tests are hardcoded to know about
+        run: cmake --build --preset ${{ matrix.config }} --target install
 
       - name: Install Test dependencies
         shell: bash
