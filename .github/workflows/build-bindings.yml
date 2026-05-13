@@ -46,13 +46,27 @@ jobs:
             --profile:host=profiles/host/emscripten-${{ matrix.config }} \
             --build=missing
 
-      - name: CMake configure
+      - name: Configure
         shell: bash
         env:
           # Tell Cmake where CSP is
           CMAKE_PREFIX_PATH: ${{ github.workspace }}/CSP/install
         run: cmake --preset ${{ matrix.config }}
 
-      - name: CMake build
+      - name: Build
         shell: bash
         run: cmake --build --preset ${{ matrix.config }}
+
+      - name: Install
+        shell: bash
+        run: cmake --install build/Debug --prefix CSP-WASM-Bindings # This is a magic install prefix that the tests are hardcoded to know about
+
+      - name: Install Test dependencies
+        shell: bash
+        working-directory: ./tests
+        run: npm install
+
+      - name: Test
+        shell: bash
+        working-directory: ./tests
+        run: npm test
