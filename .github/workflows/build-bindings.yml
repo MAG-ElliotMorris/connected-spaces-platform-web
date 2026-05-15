@@ -1,4 +1,4 @@
-name: Build emscripten bindings
+name: Build WASM Bindings
 
 on:
   pull_request:
