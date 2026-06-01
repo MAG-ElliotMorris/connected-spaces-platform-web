@@ -148,6 +148,7 @@ public:
     // Map of pointers
     csp::common::Map<int, BindingsTestType*> GetMapOfPointersByValue() const { return m_mapOfPointers; }
     const csp::common::Map<int, BindingsTestType*> GetMapOfPointersByConstRef() const { return m_mapOfPointers; }
+    csp::common::Map<int, BindingsTestType*> GetMapOfCppOwnedPointers() const { return m_mapOfCppOwnedPointers; }
     void SetMapOfPointersByValue(csp::common::Map<int, BindingsTestType*> value) { m_mapOfPointers = std::move(value); }
     void SetMapOfPointersByConstRef(const csp::common::Map<int, BindingsTestType*>& value) { m_mapOfPointers = value; }
 
@@ -167,6 +168,7 @@ private:
     csp::common::List<BindingsTestType*> m_listOfPointers;
     csp::common::List<BindingsTestType*> m_listOfCppOwnedPointers; //Prefilled in constructor
     csp::common::Map<int, BindingsTestType*> m_mapOfPointers;
+    csp::common::Map<int, BindingsTestType*> m_mapOfCppOwnedPointers; //Prefilled in constructor
     // Optional to pointer isn't a pattern we express (i think).
 
     // We may need to add List<T*>* for annoying reasons, I believe this is a pattern
@@ -180,6 +182,9 @@ public:
         
         m_listOfCppOwnedPointers.Append(new BindingsTestType(1, "One"));
         m_listOfCppOwnedPointers.Append(new BindingsTestType(2, "Two"));
+
+        m_mapOfCppOwnedPointers[1] = new BindingsTestType(1, "One");
+        m_mapOfCppOwnedPointers[2] = new BindingsTestType(2, "Two");
     }
 };
 
