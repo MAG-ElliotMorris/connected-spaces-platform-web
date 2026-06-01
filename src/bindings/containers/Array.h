@@ -47,23 +47,23 @@ namespace bindings::utils
  * You should use `view` to get at the memory here in Wiretype bindings, it'll always point to the right thing.
  */
  template <typename T>
-  class CSPArrayJSDisposable {
-      // ownedArray must be declared before arrayView: member init order follows
-      // declaration order, and the rvalue ctor binds arrayView to *ownedArray.
-      private:
-        std::optional<csp::common::Array<T>> ownedArray;
-      public:
-        //Points to either externally managed memory, or `ownedArray`. Use this in the Wiretype bindings.
-        const csp::common::Array<T>& arrayView;
+class CSPArrayJSDisposable {
+    // ownedArray must be declared before arrayView: member init order follows
+    // declaration order, and the rvalue ctor binds arrayView to *ownedArray.
+    private:
+    std::optional<csp::common::Array<T>> ownedArray;
+    public:
+    //Points to either externally managed memory, or `ownedArray`. Use this in the Wiretype bindings.
+    const csp::common::Array<T>& arrayView;
 
-        CSPArrayJSDisposable(csp::common::Array<T>&& array) : ownedArray(std::move(array)), arrayView(*ownedArray) {}
-        CSPArrayJSDisposable(const csp::common::Array<T>& array) : ownedArray(std::nullopt), arrayView(array) {}
+    CSPArrayJSDisposable(csp::common::Array<T>&& array) : ownedArray(std::move(array)), arrayView(*ownedArray) {}
+    CSPArrayJSDisposable(const csp::common::Array<T>& array) : ownedArray(std::nullopt), arrayView(array) {}
 
-        CSPArrayJSDisposable(const CSPArrayJSDisposable&) = delete;
-        CSPArrayJSDisposable(CSPArrayJSDisposable&&) = delete;
-        CSPArrayJSDisposable& operator=(const CSPArrayJSDisposable&) = delete;
-        CSPArrayJSDisposable& operator=(CSPArrayJSDisposable&&) = delete;
-  };
+    CSPArrayJSDisposable(const CSPArrayJSDisposable&) = delete;
+    CSPArrayJSDisposable(CSPArrayJSDisposable&&) = delete;
+    CSPArrayJSDisposable& operator=(const CSPArrayJSDisposable&) = delete;
+    CSPArrayJSDisposable& operator=(CSPArrayJSDisposable&&) = delete;
+};
 } // namespace bindings::utils
 
 /*
