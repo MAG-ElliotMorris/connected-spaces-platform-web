@@ -32,7 +32,7 @@ using array = csp.GetArray(); // [1, 2, 3]
 csp.SetArray([1,2,3]);
 ```
 
-This goes the same for const ref returns, JS/TS semantics are identical.
+This goes the same for const ref returns and arguments, JS/TS semantics are identical.
 
 Keep in mind that this means that, despite `List` being a dynamically resizable container, JS will not see size updates until it re-fetches the list. This has the advantage of completely removing any potential iterator invalidation bugs, but does have some interface and performance implications. This may change later if we find this simple approach to be unsuitable. 
 
@@ -61,7 +61,7 @@ using elem2 = csp.MyType.create(2, 'two');
 csp.setPointerArray([elem1, elem2])
 ```
 
-Keep in mind that when doing this, the JS/TS developer is responsible for maintaining ownership of `elem1` and `elem2`. Once they are disposed, the underling C++ will have dangling pointers, potentially leading to a crash.
+Keep in mind that when doing this, the JS/TS developer is responsible for maintaining ownership of `elem1` and `elem2`. Once they are disposed, the underlying C++ will have dangling pointers, potentially leading to a crash.
 
 This is not a common interface expression. The normal case is for pointer arrays to be used to provide non-owning handles to C++ owned objects, such as below.
 
@@ -75,7 +75,7 @@ let elem = array[0];
 
 In order to get the [disposability](#disposability) behavior we're looking for, binding containers has some amount of complexity.
 
-First, you must declare the types such that the typescript emitted is annotated correctly. A type declaration must exist for each container type that appears in the interface. 
+You must declare the types such that the typescript emitted is annotated correctly. A type declaration must exist for each container type that appears in the interface. 
 
 ```cpp
     emscripten::register_type<csp::common::Array<int>>("number[]"); //Primitive value array
@@ -123,6 +123,6 @@ Much effort has been put to try and generate typescript such that `using` is mea
 
 Owned C++ memory, such as in value arrays, must be deleted to avoid leaks, and is thus presented in typescript as `Disposable`. A value array will be presented as `(MyType[] & Disposable)`. This allows it to be declared correctly with `using`. 
 
-Non owned memory is not disposable, and if you a are type-checking correctly, will reject being declared as `using`, as is appropriate to convey that there is no disposal going on. In an ideal world, the inverse of this check would also exist as a lint rule, to insist that you use `using` unless you explicitly declare that you don't want to, and take on manual disposal responsibility yourself.
+Non owned memory is not disposable, and if you are type-checking correctly, will reject being declared as `using`, as is appropriate to convey that there is no disposal going on. In an ideal world, the inverse of this check would also exist as a lint rule, to insist that you use `using` unless you explicitly declare that you don't want to, and take on manual disposal responsibility yourself.
 
 Speaking of manual disposal, the `using` mechanism calls into the free function `disposeArray` defined in [Memory.cpp](../src/bindings/utils/Memory.cpp). You are free to use these instead if you wish more manual control.
