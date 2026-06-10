@@ -6,7 +6,7 @@
 #include <type_traits>
 
 /*
- * Binding machinery for csp::common::List 
+ * Binding machinery for csp::common::List
  * Include this file, then register bindings to function that consume/return List as follows.
 ```
 EMSCRIPTEN_BINDINGS(MyBindingsModule)
@@ -35,14 +35,14 @@ namespace bindings::utils
  * registers one TS name per C++ type and uses it in both return and parameter
  * positions. We can't make `csp::common::List<T>` itself appear as `T[] & Disposable`
  * without breaking typescript validation on setters for regular value arrays of primitives.
- * (a plain `[1,2,3]` literal isn't assignable to that type). 
+ * (a plain `[1,2,3]` literal isn't assignable to that type).
  * So, we route returns through a distinct wrapper type registered
  * as `(T[] & Disposable)`, while `csp::common::List<T>` stays `T[]` for parameters.
  *
  * This does mean you need to convert to this type at the binding site for returns,
  * which is a trade-off. Forgetting to do this will cause the typescript type checker
  * to disallow you from using `using` when storing a list return.
- * 
+ *
  * Supports both owned and non owned memory.
  * In the case of a value return out of CSP `Array<T> Func();`, it populates the optional.
  * In the case of a reference return `Array<T>& Func();`, it points the view to the CSP owned memory directly.
@@ -59,7 +59,7 @@ namespace bindings::utils
         // In theory, if we hit a reference return that is non-copyable, we could use this as the branching axis
         // for owned/non-owned memory in the wiretype bindings, rather than pointer/value. It would be more
         // honest in a way, albeit more complex conceptually.
-        std::optional<csp::common::List<T>> ownedList; 
+        std::optional<csp::common::List<T>> ownedList;
       public:
         //Points to either externally managed memory, or `ownedList`. Use this in the Wiretype bindings.
         const csp::common::List<T>& listView;
@@ -80,7 +80,7 @@ namespace bindings::utils
  * registered inside EMSCRIPTEN_BINDINGS via emscripten::register_type<>("...") so embind
  * has a typeid->name entry (otherwise "Missing binding for type" at module init) and the
  * generated .d.ts gets a meaningful element type rather than `any`.
- * 
+ *
  * For example, to register both an argument type, and a return type that is `using` enabled :
  *  emscripten::register_type<csp::common::List<MyType>>("MyType[]");
  *  emscripten::register_type<bindings::utils::CSPListDisposable<MyType>>("(MyType[] & Disposable)");
@@ -168,8 +168,13 @@ struct BindingType<bindings::utils::CSPListJSDisposable<T>>
         // Attach [Symbol.dispose] so JS `using` releases bound handles at scope exit.
         static const val symbolDispose = val::global("Symbol")["dispose"];
         static const val disposeArrayFn = val::module_property("disposeArray");
-        // bind our disposal function with the new array arg to the arrays Symbol.dispose slot.
-        newJSArray.set(symbolDispose, disposeArrayFn.call<val>("bind", val::undefined(), newJSArray));
+
+        // Bind our disposal function with the new array arg to the arrays Symbol.dispose slot.
+        // We define it as a non-enumerable property using a descriptor.
+        val descriptor = val::object();
+        descriptor.set("value", disposeArrayFn.call<val>("bind", val::undefined(), newJSArray));
+        descriptor.set("enumerable", false);
+        val::global("Object").call<void>("defineProperty", newJSArray, symbolDispose, descriptor);
 
         return ValBinding::toWireType(newJSArray, rvp::default_tag{});
     }
