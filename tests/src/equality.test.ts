@@ -366,4 +366,8 @@ describe('equality', () => {
     const d = new Map([[1, b1], [2, b1]]);
     expect(csp.mapEquals(c, d)).toBe(false);
   });
+
+   it('Map values of undefined', () => {
+    expect(csp.mapEquals(undefined, undefined)).toBe(true);
+  });
 });
