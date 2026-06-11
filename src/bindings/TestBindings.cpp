@@ -240,8 +240,8 @@ EMSCRIPTEN_BINDINGS(CSPTestBindings)
     emscripten::register_type<bindings::utils::JSDisposable<csp::common::List<BindingsTestType>>>("(BindingsTestType[] & Disposable)");
 
     // Map
-    emscripten::register_type<bindings::utils::CSPMapJSDisposable<int, int>>("(Map<number, number> & Disposable)");
-    emscripten::register_type<bindings::utils::CSPMapJSDisposable<int, BindingsTestType>>("(Map<number, BindingsTestType> & Disposable)");
+    emscripten::register_type<bindings::utils::JSDisposable<csp::common::Map<int, int>>>("(Map<number, number> & Disposable)");
+    emscripten::register_type<bindings::utils::JSDisposable<csp::common::Map<int, BindingsTestType>>>("(Map<number, BindingsTestType> & Disposable)");
     
     emscripten::class_<BindingMechanismsTestType>("BindingsMechanismsTestType")
         .class_function("create", +[](){ return BindingMechanismsTestType(); })
@@ -288,18 +288,18 @@ EMSCRIPTEN_BINDINGS(CSPTestBindings)
         .function("setListOfPointersByValue(value)", &BindingMechanismsTestType::SetListOfPointersByValue)
         .function("setListOfPointersByConstRef(value)", &BindingMechanismsTestType::SetListOfPointersByConstRef)
          .function("getMapBasicTypeByValue", +[](const BindingMechanismsTestType& self) {
-            return bindings::utils::CSPMapJSDisposable<int, int>{self.GetMapBasicTypeByValue()};
+            return bindings::utils::JSDisposable<csp::common::Map<int, int>>{self.GetMapBasicTypeByValue()};
         })
         .function("getMapBasicTypeByConstRef", +[](const BindingMechanismsTestType& self) {
-            return bindings::utils::CSPMapJSDisposable<int, int>{self.GetMapBasicTypeByConstRef()};
+            return bindings::utils::JSDisposable<csp::common::Map<int, int>>{self.GetMapBasicTypeByConstRef()};
         })
         .function("setMapBasicTypeByValue(value)", &BindingMechanismsTestType::SetMapBasicTypeByValue)
         .function("setMapBasicTypeByConstRef(value)", &BindingMechanismsTestType::SetMapBasicTypeByConstRef)
         .function("getMapFullTypeByValue", +[](const BindingMechanismsTestType& self) {
-            return bindings::utils::CSPMapJSDisposable<int, BindingsTestType>{self.GetMapFullTypeByValue()};
+            return bindings::utils::JSDisposable<csp::common::Map<int, BindingsTestType>>{self.GetMapFullTypeByValue()};
         })
         .function("getMapFullTypeByConstRef", +[](const BindingMechanismsTestType& self) {
-            return bindings::utils::CSPMapJSDisposable<int, BindingsTestType>{self.GetMapFullTypeByConstRef()};
+            return bindings::utils::JSDisposable<csp::common::Map<int, BindingsTestType>>{self.GetMapFullTypeByConstRef()};
         })
         .function("setMapFullTypeByValue(value)", &BindingMechanismsTestType::SetMapFullTypeByValue)
         .function("setMapFullTypeByConstRef(value)", &BindingMechanismsTestType::SetMapFullTypeByConstRef)

@@ -33,25 +33,26 @@ namespace bindings::utils
  */
  template <typename T>
   class JSDisposable {
-      // ownedType must be declared before view: member init order follows
-      // declaration order, and the rvalue ctor binds view to *ownedType.
-      private:
-        // In theory, if we hit a reference return that is non-copyable, we could use this as the branching axis
-        // for owned/non-owned memory in the wiretype bindings, rather than pointer/value. It would be more
-        // honest in a way, albeit more complex conceptually.
-        std::optional<T> ownedType; 
-      public:
-        //Points to either externally managed memory, or `ownedType`. Use this in the Wiretype bindings.
-        const T& view;
 
-    JSDisposable(T&& obj) : ownedType(std::move(obj)), view(*ownedType) {}
-    JSDisposable(const T& obj) : ownedType(std::nullopt), view(obj) {}
+    // ownedType must be declared before view: member init order follows
+    // declaration order, and the rvalue ctor binds view to *ownedType.
+    private:
+      // In theory, if we hit a reference return that is non-copyable, we could use this as the branching axis
+      // for owned/non-owned memory in the wiretype bindings, rather than pointer/value. It would be more
+      // honest in a way, albeit more complex conceptually.
+      std::optional<T> ownedType; 
+    public:
+      //Points to either externally managed memory, or `ownedType`. Use this in the Wiretype bindings.
+      const T& view;
 
-    JSDisposable(const JSDisposable&) = delete;
-    JSDisposable(JSDisposable&&) = delete;
-    JSDisposable& operator=(const JSDisposable&) = delete;
-    JSDisposable& operator=(JSDisposable&&) = delete;
-    // reject const prvalues out of an overabundance of caution. Stop const values going to the const-ref constructor and dangling.
-    JSDisposable(const T&& obj) = delete;  
+      JSDisposable(T&& obj) : ownedType(std::move(obj)), view(*ownedType) {}
+      JSDisposable(const T& obj) : ownedType(std::nullopt), view(obj) {}
+
+      JSDisposable(const JSDisposable&) = delete;
+      JSDisposable(JSDisposable&&) = delete;
+      JSDisposable& operator=(const JSDisposable&) = delete;
+      JSDisposable& operator=(JSDisposable&&) = delete;
+      // reject const prvalues out of an overabundance of caution. Stop const values going to the const-ref constructor and dangling.
+      JSDisposable(const T&& obj) = delete;  
 };
 } // namespace bindings::utils
